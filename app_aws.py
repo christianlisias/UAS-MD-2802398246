@@ -1,33 +1,20 @@
-import json
-import os
+import sys
+from pathlib import Path
 
-import boto3
 import streamlit as st
 
-REGION = "us-east-1"
-ENDPOINT_NAME = "credit-score-endpoint"
+sys.path.append(str(Path(__file__).resolve().parent))
+from inference import CreditScoreInference
 
 
-def get_runtime_client():
-    try:
-        if "aws" in st.secrets:
-            return boto3.client(
-                "sagemaker-runtime",
-                region_name=st.secrets["aws"].get("region", REGION),
-                aws_access_key_id=st.secrets["aws"]["aws_access_key_id"],
-                aws_secret_access_key=st.secrets["aws"]["aws_secret_access_key"],
-                aws_session_token=st.secrets["aws"].get("aws_session_token"),
-            )
-    except Exception:
-        pass
-
-    # Fallback: default credential chain (IAM Role EC2 / env var / aws configure)
-    return boto3.client("sagemaker-runtime", region_name=os.environ.get("AWS_REGION", REGION))
+@st.cache_resource
+def load_service():
+    return CreditScoreInference()
 
 
-runtime = get_runtime_client()
+service = load_service()
 
-st.title("Credit Score Prediction (AWS SageMaker Endpoint)")
+st.title("Credit Score Prediction")
 
 age = st.number_input("Age", min_value=14, max_value=100, value=30)
 occupation = st.text_input("Occupation", value="Engineer")
@@ -78,22 +65,12 @@ if st.button("Prediksi Credit Score"):
         "Monthly_Balance": monthly_balance,
     }
 
-    payload = json.dumps({"instances": [record]})
+    result = service.predict(record)
 
-    try:
-        response = runtime.invoke_endpoint(
-            EndpointName=ENDPOINT_NAME,
-            ContentType="application/json",
-            Accept="application/json",
-            Body=payload,
-        )
-        result = json.loads(response["Body"].read().decode("utf-8"))
+    st.write("Hasil Prediksi:", result["predicted_credit_score"])
 
-        st.write("Hasil Prediksi:", result["labels"][0])
-
+    proba_cols = [c for c in result if c.startswith("proba_")]
+    if proba_cols:
         st.write("Probabilitas tiap kelas:")
-        for cls, prob in zip(result["classes"], result["probabilities"][0]):
-            st.write(f"{cls}: {prob:.4f}")
-
-    except Exception as e:
-        st.error(f"Gagal memanggil SageMaker endpoint: {e}")
+        for c in proba_cols:
+            st.write(f"{c.replace('proba_', '')}: {result[c]:.4f}")
