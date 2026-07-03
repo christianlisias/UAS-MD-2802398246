@@ -4,29 +4,6 @@ import os
 import boto3
 import streamlit as st
 
-REGION = "us-east-1"
-ENDPOINT_NAME = "credit-score-endpoint"
-
-
-def get_runtime_client():
-    try:
-        if "aws" in st.secrets:
-            return boto3.client(
-                "sagemaker-runtime",
-                region_name=st.secrets["aws"].get("region", REGION),
-                aws_access_key_id=st.secrets["aws"]["aws_access_key_id"],
-                aws_secret_access_key=st.secrets["aws"]["aws_secret_access_key"],
-                aws_session_token=st.secrets["aws"].get("aws_session_token"),
-            )
-    except Exception:
-        pass
-
-    # Fallback: default credential chain (IAM Role EC2 / env var / aws configure)
-    return boto3.client("sagemaker-runtime", region_name=os.environ.get("AWS_REGION", REGION))
-
-
-runtime = get_runtime_client()
-
 st.title("Credit Score Prediction (AWS SageMaker Endpoint)")
 
 age = st.number_input("Age", min_value=14, max_value=100, value=30)
