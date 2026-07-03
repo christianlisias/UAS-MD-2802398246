@@ -1,8 +1,1 @@
-pandas
-numpy
-scikit-learn
-mlflow
-joblib
-matplotlib
-seaborn
-streamlit
+scikit-learn==1.4.2
