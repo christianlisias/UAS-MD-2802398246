@@ -1,15 +1,3 @@
-"""
-app_aws.py
-Aplikasi Streamlit yang memanggil SageMaker Endpoint (bukan model lokal) untuk
-prediksi Credit Score. Dipakai untuk deployment cloud (soal 2b).
-
-Kredensial AWS dibaca dari st.secrets (saat deploy di Streamlit Community Cloud)
-atau dari environment variable / AWS CLI profile (saat dijalankan lokal).
-
-Jalankan dengan:
-    streamlit run app_aws.py
-"""
-
 import json
 import os
 
